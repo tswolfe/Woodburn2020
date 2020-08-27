@@ -174,3 +174,48 @@ head(BigMac2003)
 #Now to see how it applies to the BigMac2003 data we can use the code
 
 apply(BigMac2003,2, mean)
+
+##for -> iterate over a set (through an index) and calculate something inside of it
+
+Sum=0
+for(i in 1:20)
+Sum=Sum+i
+Sum
+
+sum(1:20)
+
+##while statements help your algorithms stop
+
+sum=(1:20)
+Sum=0
+iter=0
+while(Sum<100){
+iter=iter+1
+Sum=Sum+iter
+}
+Sum
+iter
+##^^ this code did not perform as Brad demonstrated, look into this!
+
+###Bootstrapping
+
+#Statistical inference is the process of drawing conclusions about the entire population based on the information in the sample. 
+#The whole idea is we want to use statistics from our sample to make estimates (and draw conclusions) about parameters from our population. 
+#Statistical inference has two common components: confidence intervals and hypothesis tests. 
+#To understand how to use bootstrap and randomization testing methods, we first need to really understand what statistical inference is and some of the definitions that come with it. 
+#Below are some examples.
+
+#Sample Mean → True Mean
+#Sample Sd → True Sd
+#Sample Min → True Minimum
+#Sample Max → True Max
+#Sample Regression Line → True Mean Function
+
+###Parameter
+###Sampling Distribution
+
+###Bootstrapping
+
+
+
+
