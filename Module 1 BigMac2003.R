@@ -216,6 +216,9 @@ iter
 
 ###Bootstrapping
 
+## ATL Commute example
 
-
+atl <- read.csv("http://www.lock5stat.com/datasets/CommuteAtlanta.csv")
+head(atl)
+hist(atl$Time, main="Histogram of Atl Commute Times")
 
