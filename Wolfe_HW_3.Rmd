@@ -1,0 +1,199 @@
+---
+title: "Module 3 Wolfe"
+author: "Tyler Wolfe"
+date: "9/13/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Problem 1:
+
+The data file jevons in the alr4 package is a study of the weight of 274 gold coins that were collected in 1868 in Manchester, England.  For each coin the weight after cleaning was recorded to the nearest 0.001 gram, and the date of the issue.  The data includes a summary of this information the variable Age, which is the age of the coin in decades, n, the number of coins with that age, Weight, the average weight of the n coins of that age, SD, the standard deviation of the n coins of that age.  The standard for new coins was 7.9876g, and legally the coins had to exceed 7.9379g. 
+
+Use weighted least squares to analyze the data appropriately to define the relationship between weight and age.  Interpret the regression coefficients, and compare the result to using original least squares (no weights) and discuss the differences.  How do your predictions at ages 1-5 relate to the legal minimum for a coin? 
+
+Hint:  Plot the relationship of SD to the mean to look to see if the variance is constant.  Remember the Variance of any mean is SD^2/n, which you will need to create your weight.  
+
+
+First step is to open the data and explore the variables
+```{r}
+library(alr4)
+help(jevons)
+head(jevons)
+```
+We see that the head only produces 5 observations instead of the typical 6 observations. Taking a look at the dimensions, we can see the size of the data set.
+```{r}
+dim(jevons)
+```
+We see that there are only 5 observations and 6 variables. 
+
+```{r}
+plot(Weight~Age,data=jevons)
+```
+In the above plot, we see that there is a negative correlation characterized by the downward trend between Weight and Age, where when Age increases, Weight decreases. Understanding that the Weight variable, in relation to Age, in this dataset is an average of all of the coins of that age. For instance, the average Weight shown by Age=1 is representative of 123 observed different weighted coins that are 1 decade old. The Weight data point for Age=2 is a representatin of the average weight for 78 observed coins that are 2 decades old and etc. 
+
+When we revisit our head from above we see that the standard deviation is also shown, as well as the minimum weight and maximum weights observed within the individual vectors, as sorted by age. For example, we can see that the minimum weight of all 123 observations in Age=1 range from 7.900 grams - 7.999 grams, but are represented in the plot above as the mean of 7.9725 iwith a Standard Deviation of .01409.
+
+As we consider the overall implications on the data because of the inequality of the data points and the observations they represent, it may be worth looking into the variances.
+
+```{r}
+plot(SD^2~Age, data=jevons)
+```
+By plotting the Standard Deviation squared in comparison with Age, we see that as the age increases, so does the the variance. Because the variance is not constant (because the data points do not form a horizontal line across the plot), we will claculate the variance of each data point in Plot(Weight~Age, data=jevons). To do so we will use $SD^2/n$.
+
+```{r}
+model1<-lm(Weight~Age,weights=n/(SD^2),data=jevons)
+summary(model1)
+```
+In the summary of our model, we see that as Age increases by one unit, we should expect weight to decrease by .02 grams. The p-value of .0001 is smaller than .05 which confirms our inference from above that Age and Weight have a relationship. Before we plot the least squares model, lets look at a simple linear regression.
+
+```{r}
+model2<-lm(Weight~Age,data=jevons)
+summary(model2)
+```
+
+Comparing the two summaries, we see that there are some discrepencies. These differences in coefficients are because model1 is including a weighted least squared model accounting for non-constant variance, where model 2 is only comparing the relationship between Weights and Age assuming constant variance.
+
+Lets plot the models to see the differences visually. 
+
+```{r}
+plot(Weight~Age,data=jevons)
+abline(model1)
+abline(model2,col=4)
+```
+As seen in the above plot, the two lines (for model1 (black) and model2 (blue)) vary only by small amounts. Because the standard deviation of the Age=1 is smaller, and slowly grows as we approach Age=5, we can be more certain that we can predict in Age=1. The variance becomes less predictable as we move to the right on the x-axis towards Age=4 and Age=5.
+
+Concerning predictability of whether the coins maintain the legal minimum for circulation, we can be more certain after one or two decades of circulation, but less certain the coins weigh the minimum of 7.9379 grams after four or five decades. As observed that as age increases by decades, the variance becomes larger, and the mean weight of coins lowers. We can assume that more coins in circulation for 50 years (five decades) or longer have less of a chance at weighing the legal minimum. 
+```{r}
+pred79379=predict(WLSmodel,newdataWLS=data.frame(weight=7.9379),interval = "prediction")
+summary(pred79379)
+```
+
+```{r}
+conf79379=predict(WLSmodel,newdataWLS=data.frame(weight=7.9379),interval = "confidence")
+
+summary(conf79379)
+```
+
+Problem 2:  Using the stopping data in the alr4 package, fit a model that estimates the stopping distance (Distance) given the speed is known (Speed).  Create a scatter plot, and then investigate a possible transformation that allows OLS to fit this model.  Interpret the model and present any insights you may have.
+
+"(Log) rule"
+
+```{r}
+dim(stopping)
+help(stopping)
+```
+
+```{r}
+head(stopping)
+```
+
+```{r}
+plot(stopping)
+```
+
+```{r}
+modeld<-lm(Distance~Speed, data=stopping)
+summary(modeld)
+```
+
+```{r}
+invResPlot(modeld)
+```
+
+```{r}
+boxCox(modeld)
+```
+
+```{r}
+modeld2<-lm(sqrt(Distance)~Speed, data=stopping)
+summary(modeld2)
+```
+
+```{r}
+plot(sqrt(Distance)~Speed, data = stopping)
+```
+
+
+
+
+
+
+
+
+
+Problem 3:  Please look at the help file for the data in this problem.  We have been asked to analyze the MinnLand data in the alr4 package.  For now we will analyze it without using the region or financing variables included in the data (DO NOT USE THIS IN YOUR MODEL YET). Using all other variables, fit a model to explain acrePrice using all other variables.  Decide on appropriate transformations and diagnostic methods for the data. Fit your final model and provide any insights it provides on the data.  You should include any interpretation you can provide.
+
+First I will load the data and explore dimensions and identify variables in the data by examining the head.
+
+```{r}
+dim(MinnLand)
+```
+```{r}
+head(MinnLand)
+help(MinnLand)
+```
+We see that there are 18700 observations across 9 vectors. Next we will execute a non-transformed regression model with acrePrice as the response and improvements, year, acres, tillable, crpPct, and productivity as predictors.
+```{r}
+modela1<-lm(acrePrice~ improvements+ year+ acres+ tillable+ crpPct+ productivity, data=MinnLand)
+summary(modela1)
+```
+
+```{r}
+par(mfrow=c(2,2))
+```
+
+```{r}
+plot(modela1)
+```
+
+```{r}
+invResPlot(modela1)
+```
+
+
+```{r}
+infIndexPlot(modela1)
+```
+
+
+```{r}
+boxCox(modela1)
+```
+
+
+```{r}
+plot(allEffects(modela1))
+```
+
+
+LOG
+
+```{r}
+modelLogMinn<-lm(log(acrePrice)~improvements+year+log(acres)+log(tillable)+crpPct+productivity, data=MinnLand)
+summary(modelLogMinn)
+```
+
+```{r}
+par(mfrow=c(2,2))
+```
+
+```{r}
+plot(modelLogMinn)
+```
+
+```{r}
+plot(alleffect(modelLogMinn))
+```
+
+
+Square Root
+
+```{r}
+modelMinnsqrt<-lm(sqrt(acrePrice)~improvements+year+sqrt(acres)+sqrt(tillable)+crpPct+productivity, data=MinnLand)
+summary(modelMinnsqrt)
+```
