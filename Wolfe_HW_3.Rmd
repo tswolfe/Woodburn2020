@@ -16,8 +16,8 @@ The data file jevons in the alr4 package is a study of the weight of 274 gold co
 
 Use weighted least squares to analyze the data appropriately to define the relationship between weight and age.  Interpret the regression coefficients, and compare the result to using original least squares (no weights) and discuss the differences.  How do your predictions at ages 1-5 relate to the legal minimum for a coin? 
 
-Hint:  Plot the relationship of SD to the mean to look to see if the variance is constant.  Remember the Variance of any mean is SD^2/n, which you will need to create your weight.  
-
+Hint:  Plot the relationship of SD to the mean to look to see if the variance is constant.  Remember the Variance of any mean is SD^2/n, which you will need to create your weight. 
+----
 
 First step is to open the data and explore the variables
 ```{r}
@@ -67,66 +67,71 @@ abline(model2,col=4)
 ```
 As seen in the above plot, the two lines (for model1 (black) and model2 (blue)) vary only by small amounts. Because the standard deviation of the Age=1 is smaller, and slowly grows as we approach Age=5, we can be more certain that we can predict in Age=1. The variance becomes less predictable as we move to the right on the x-axis towards Age=4 and Age=5.
 
-Concerning predictability of whether the coins maintain the legal minimum for circulation, we can be more certain after one or two decades of circulation, but less certain the coins weigh the minimum of 7.9379 grams after four or five decades. As observed that as age increases by decades, the variance becomes larger, and the mean weight of coins lowers. We can assume that more coins in circulation for 50 years (five decades) or longer have less of a chance at weighing the legal minimum. 
+So lets consider when currency should be taken out of circulation to remain 95% confident that the currency still means the legal weight of 7.9379 grams. 
 ```{r}
-pred79379=predict(WLSmodel,newdataWLS=data.frame(weight=7.9379),interval = "prediction")
-summary(pred79379)
+predAge1=predict(model1, newdataWLS = data.frame(weight=7.9379), interval = "confidence")
+predAge1
 ```
+Concerning predictability of whether the coins maintain the legal minimum for circulation, we can be 95% confident that after one or two decades of circulation currency still meets the legal specifications. However, after two decades of circulation we see that the upper bounds of the predicted weight for Age=3, 4, and 5 illustrate that the coins are not in compliance with minimum legal specifications. By this rational, we should remove the coins after 20 years of circulation.
 
-```{r}
-conf79379=predict(WLSmodel,newdataWLS=data.frame(weight=7.9379),interval = "confidence")
+---------------------------------------------------------------------------
 
-summary(conf79379)
-```
+## Problem 2:  
+Using the stopping data in the alr4 package, fit a model that estimates the stopping distance (Distance) given the speed is known (Speed).  Create a scatter plot, and then investigate a possible transformation that allows OLS to fit this model.  Interpret the model and present any insights you may have.
+----
 
-Problem 2:  Using the stopping data in the alr4 package, fit a model that estimates the stopping distance (Distance) given the speed is known (Speed).  Create a scatter plot, and then investigate a possible transformation that allows OLS to fit this model.  Interpret the model and present any insights you may have.
-
-"(Log) rule"
+To begin analyzing the data, I will examine the dimensions, head and plot the data in order to understand the data, prior to determining the appropriate transformation.
 
 ```{r}
 dim(stopping)
 help(stopping)
 ```
-
+By opening the help file associated with the data, we see that the speed is measured in mph, while distance is measured in feet.
 ```{r}
 head(stopping)
 ```
-
 ```{r}
 plot(stopping)
+modeld<-lm(Distance~Speed, data=stopping)
+abline(modeld, col=4)
 ```
+After plotting the data, we observe that the distance interprets as higher than on order of magnitude. Under the "Log Rule," which states that if the values of a variable range by more than one order of magnitude and the variable is strictly positive, then use of a log transformation is appropriate. Since all observations of distance are positive, this applies.
 
 ```{r}
-modeld<-lm(Distance~Speed, data=stopping)
 summary(modeld)
 ```
-
 ```{r}
-invResPlot(modeld)
+modeldLog<-lm(log(Distance)~log(Speed), data=stopping)
+summary(modeldLog)
 ```
-
 ```{r}
-boxCox(modeld)
+plot(modeldLog)
 ```
+After transforming the model to log(Distance) as response and log(Speed) as predictor, we can see by our residuals vs. fitted plot that there is an obvious curve among our residuals. As a square root transformation is a common practice for stabilizing variance among residuals, I will attempt to execute a square root transformation model, first only transforming the response, then moving on to transform the predictor if necessary to further stabilize variance in the residuals.
 
 ```{r}
-modeld2<-lm(sqrt(Distance)~Speed, data=stopping)
-summary(modeld2)
+modeld3<-lm(sqrt(Distance)~Speed, data=stopping)
+summary(modeld3)
 ```
 
 ```{r}
 plot(sqrt(Distance)~Speed, data = stopping)
+plot(modeld3)
 ```
 
+in comparison, the new residuals vs. fitted based on the square root transformation seems to have stabilized the variance in the residuals.
 
+We see in the summary of modeld3, that we can expect that for every one mph of speed, we can expect the necessary stopping distance to increase by .25 feet.
 
+Unfortunately, using a square root transformation also is known to create issues for interpretations. For instance, in the above discussion concerning the relationship between speed and distance, we cannot infer that 1 mph increase will also increase stopping distance by .25ft^2 (.0625 ft) because there is no way to transform the result to an accurate number.
 
+Hopefully soon we will learn another alternative method of stabilizing variance within residuals and conversion to linear data that does not create issues with inference. 
 
+---------------------------------------------------------------------------
 
-
-
-
-Problem 3:  Please look at the help file for the data in this problem.  We have been asked to analyze the MinnLand data in the alr4 package.  For now we will analyze it without using the region or financing variables included in the data (DO NOT USE THIS IN YOUR MODEL YET). Using all other variables, fit a model to explain acrePrice using all other variables.  Decide on appropriate transformations and diagnostic methods for the data. Fit your final model and provide any insights it provides on the data.  You should include any interpretation you can provide.
+## Problem 3:  
+Please look at the help file for the data in this problem.  We have been asked to analyze the MinnLand data in the alr4 package.  For now we will analyze it without using the region or financing variables included in the data (DO NOT USE THIS IN YOUR MODEL YET). Using all other variables, fit a model to explain acrePrice using all other variables.  Decide on appropriate transformations and diagnostic methods for the data. Fit your final model and provide any insights it provides on the data.  You should include any interpretation you can provide.
+-----
 
 First I will load the data and explore dimensions and identify variables in the data by examining the head.
 
@@ -145,9 +150,7 @@ summary(modela1)
 
 ```{r}
 par(mfrow=c(2,2))
-```
 
-```{r}
 plot(modela1)
 ```
 
@@ -180,14 +183,12 @@ summary(modelLogMinn)
 
 ```{r}
 par(mfrow=c(2,2))
-```
 
-```{r}
 plot(modelLogMinn)
 ```
 
 ```{r}
-plot(alleffect(modelLogMinn))
+plot(allEffects(modelLogMinn))
 ```
 
 
