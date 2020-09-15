@@ -136,65 +136,67 @@ Please look at the help file for the data in this problem.  We have been asked t
 First I will load the data and explore dimensions and identify variables in the data by examining the head.
 
 ```{r}
+library(alr4)
 dim(MinnLand)
 ```
 ```{r}
 head(MinnLand)
 help(MinnLand)
 ```
-We see that there are 18700 observations across 9 vectors. Next we will execute a non-transformed regression model with acrePrice as the response and improvements, year, acres, tillable, crpPct, and productivity as predictors.
-```{r}
-modela1<-lm(acrePrice~ improvements+ year+ acres+ tillable+ crpPct+ productivity, data=MinnLand)
-summary(modela1)
-```
+In the above printouts, we see that the data has 18700 observations over 9 vectors. In the head we observe that the help file was correct in saying that not all of the vectors contain exclusively values, as some counties in the state of Minnesota have not factored in productivity or had land surveyed to account for if the land is tillable by an assessor. Lets execute a take a look at the summary of the data.
 
 ```{r}
-par(mfrow=c(2,2))
-
-plot(modela1)
+summary(MinnLand)
 ```
+
+In the summary, we see that several values have a magnitude of 1 or higher so we could consider using log transformation. But first, lets execute a non-transformed linear regression.
 
 ```{r}
-invResPlot(modela1)
+modela<-lm(acrePrice~improvements+year+acres+tillable+crpPct+productivity, data=MinnLand)
+summary(modela)
 ```
 
-
-```{r}
-infIndexPlot(modela1)
-```
-
-
-```{r}
-boxCox(modela1)
-```
-
-
-```{r}
-plot(allEffects(modela1))
-```
-
-
-LOG
-
-```{r}
-modelLogMinn<-lm(log(acrePrice)~improvements+year+log(acres)+log(tillable)+crpPct+productivity, data=MinnLand)
-summary(modelLogMinn)
-```
+After executing the model, we should look further into our residuals.
 
 ```{r}
 par(mfrow=c(2,2))
-
-plot(modelLogMinn)
+plot(modela)
 ```
+In our residuals vs. fitted plot we can see that there is a curve in our residuals, indicating that we should try to transform the data in order to execute a more accurate regression model.
+
+So lets try a log transformation.
 
 ```{r}
-plot(allEffects(modelLogMinn))
+modelaLog<-lm(log(acrePrice)~improvements+year+log(acres)+log(tillable)+crpPct+productivity, data=MinnLand)
+summary(modelaLog)
 ```
-
-
-Square Root
+By comparing the residuals of modela and modelaLog, we have successfully reduced the residuals, but lets explore a little more.
 
 ```{r}
-modelMinnsqrt<-lm(sqrt(acrePrice)~improvements+year+sqrt(acres)+sqrt(tillable)+crpPct+productivity, data=MinnLand)
-summary(modelMinnsqrt)
+par(mfrow=c(2,2))
+plot(modelaLog)
 ```
+Still not satisfied with the shape of the residuals vs. fitted, I will try a square root transformation.
+
+```{r}
+modelaSQRT<-lm(sqrt(acrePrice)~improvements+year+sqrt(acres)+sqrt(tillable)+crpPct+productivity, data=MinnLand)
+summary(modelaSQRT)
+```
+```{r}
+par(mfrow=c(2,2))
+plot(modelaSQRT)
+```
+Understanding that square root transformation can create issues with interpretation, as discussed in problem 2, as well as that the shape of the line on the right side of the residuals vs. fitted plot, I have decided to interpret the data using the log model.
+```{r}
+summary(modelaLog)
+```
+
+given the summary of the coefficients of modelaLog, we can observe that:
+
+A one unit increase in improvements yields a 1.4% increase in price per acre.
+A one unit increase in year yields a 1.21% increase in price per acre (I feel that this may be incorrect as I am unsure how to convert year into a factor).
+A one percent increase in acres yields a 1.08% decrease in price per acre.
+A one percent increase in tillable land yields a 2.155% increase in price per acre.
+A one unit increase in acres enrolled in the Conservation Reserve Program yields a 4.73% decrease in price per acre.
+A one unit increase in average agronomic productivity yields a 1.63% increase in price per acre.
+
