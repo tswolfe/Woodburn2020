@@ -5,7 +5,9 @@ date: "9/21/2020"
 output: word_document
 ---
 
-
+```{r,}
+library(alr4)
+```
 The first two problems in this homework are on the MinnLand data from the alr4 package.  Imagine yourself working for an organization such as one that is interested in food production, that needs to understand land prices of farms.  We need to be able to communicate the drivers of these prices and the effects of time and region. To understand trends but also where we may find land that is undervalued.  In the next two questions you'll begin to explore how the price per acre has changed over time, and also investigate if there was a region effect.  A region effect would be important in detecting an area where prices may be more robust.
 
 --------------------------------------------------
@@ -74,19 +76,42 @@ M1<-lm(log(acrePrice)~yearFactor+region, data=MinnLand)
 summary(M1)
 par(mfrow=c(2,2))
 plot(M1)
-plot(allEffects(M1))
 ```
 
+After examining model 1 we see that we've included the regions, but this information isn't necessarily helpful as it's only taking into account the means of the factors of different regions, not the means of regions by year. Perhaps the second model will allow us to make more insights.
 
 ```{r}
 M2<-lm(log(acrePrice)~yearFactor+region+yearFactor*region, data=MinnLand)
 summary(M2)
 par(mfrow=c(2,2))
 plot(M2)
-plot(allEffects(M2))
 ```
 
-After running both provided models, checking residuals and using an all effects plot, we can make a few observations. 
+```{r}
+plot(log(acrePrice)~year,data=MinnLand, type="n", ylim=c(4,10))
+
+years=unique(MinnLand$year)
+years
+regions=unique(MinnLand$region)
+regions
+for(i in 1:length(regions)){
+  newdata=MinnLand[MinnLand$region==regions[i],]
+  means=tapply(log(newdata$acrePrice),newdata$yearFactor, mean)
+  lines(means~years, col=i, lty=i,type="b")
+}
+
+legend("bottomright",col=(1:length(regions)), legend=regions,lty=1)
+```
+
+After running both provided models, checking residuals and using an all effects plot, we can make a few observations. First, the coefficient breakdown of regions by year provides us with much more information and allows us to compare not only by year, or region, but by region separated into year as well. 
+
+Although I feel that model 2 is the better choice, let's check that assertion with an anova test.
+
+```{r}
+anova(M1,M2)
+```
+
+Based on the anova test, and the significant p-value caused by the added variables in the second model, I would say that model 2 is the "best" model to use of the two provided models. Also, by examining the all effects plot for model two, we can see a positive trend in almost all regions over the course of 2002 to 2011. The only discrepancy would be in the West Central region from 2010 to 2011. We can also see that the South East region showed noticeably more growth between 2003 and 2004, and the South Central and South West regions showed stronger growth from 2007 to 2008.
 
 ---------------------------------------------------------------------------
 
@@ -124,17 +149,76 @@ t.test(x=salary$salary[salary$sex=="Male"],y=salary$salary[salary$sex=="Female"]
 
 ```
 
+Examining the results of the t-test, we can see that their is a difference in the average salary based on sex when using .05 as the alpha (fail to reject the Null that males make less than or equal to females. However, when we adjust the alpha to .001, we reject the null, concluding that males mean salaries are greater than female mean salaries. Due to the differences between the two alpha's we should continue our analysis by exploring other variables through a regression model.
 
+```{r}
+salaryModel1<-lm(salary~year+ysdeg+degree+rank+sex, data=salary)
+par(mfrow=c(2,2))
+plot(salaryModel1)
+summary(salaryModel1)
+```
+
+After running a regression model with all variables, we can see that sex is not a significant variable to determine salary. The variables that display significance across all alpha's are rank, and years in current rank.
+
+Alternatively I wanted to also take a look at the representation across the various ranks, as we see that rank is a determining factor to salary. If there are less females represented in the higher ranks, the mean of female salary will be lower. Also, their may be potential for disparate impact or potential legal ramifications if it appears that females are not adequately represented across all ranks.
+
+```{r}
+table(salary$rank,salary$sex)
+```
+
+As suspected, female staff members become less common in relation to male staff members as you progress through the ranks. This could become a legal liability for the university if not addressed. Because less females are making the pay accounted for in the higher ranks, the females are making less on average.
 
 
 -----------------------------------------------------------
 
 Problem 4: In many manufacturing setting understanding levels in which machines can be tuned to produce a given product is very important. Even more important is understanding the ability of those products strength and ability to fail. In this setting we are going to look at the strength of yarn, based on the length of the yarn (len), the time the yarn was asked to hold per cycle (amp), and the amount the yarn was asked to hold (load).  The response is the number of times/cycles the yarn made it through without breaking (cycles). The data can be found in the wool dataset in the alr4 package. Fit the full main effects model using cycles as the response and all other variables as predictors, and interpret the Tukey HSD intervals and test with regard to load, to describe the differences between the levels of load. 
-
 ----
 
+To begin, as always, I will explore the data to familiarize myself.
 
+```{r}
+help(Wool)
+dim(Wool)
+head(Wool)
 
+```
 
+We see that their are 27 observations across four variables: length, amplitude, load, and cycles. 
 
+```{r}
+summary(Wool)
+```
 
+In our summary of the data set we see a magitude of more than 10 in our cycles vector, which suggests we should use a log transformation. We can also see in the summary and in the help file that there are only three distinct outcomes in each of the other vectors. Because of this, I will transform the other variables of length, amplitude, and load into factors.
+
+```{r}
+Wool$lenF<-as.factor(Wool$len)
+Wool$ampF<-as.factor(Wool$amp)
+Wool$loadF<-as.factor(Wool$load)
+```
+
+Now that the other variables are factors, I will construct two models, one without the log transformation for cycles and the other with.
+
+```{r}
+woolM1<-lm(cycles~lenF+ampF+loadF, data=Wool)
+summary(woolM1)
+par(mfrow=c(2,2))
+plot(woolM1)
+```
+
+```{r}
+woolM2<-lm(log(cycles)~lenF+ampF+loadF, data=Wool)
+summary(woolM2)
+par(mfrow=c(2,2))
+plot(woolM2)
+```
+
+comparing both models, we see that the transformed "woolM2" contains more standarized variance. One could argue that their is a slight curve in the residuals, but the variance is dramatically less than in "woolM1".
+
+As requested, the next step will be to perform a Tukey HSD test in an attempt to describe the variation in the levels of load.
+
+```{r}
+TukeyHSD(aov(log(cycles)~lenF+ampF+loadF, data=Wool), "loadF")
+```
+
+We can observe from the Tukey test that all three load ranges are significant at alpha's of .01 and .05. I believe that this can be interpreted as the differences between upper and lower bounds in 50-40 range is less than that of 45-40 and 50-45. It should also be noted that their may be a discrepancy in the the differences between lower and upper because of the log transformation.
