@@ -1,0 +1,140 @@
+---
+title: "Wolfe_HW_4"
+author: "Tyler Wolfe"
+date: "9/21/2020"
+output: word_document
+---
+
+
+The first two problems in this homework are on the MinnLand data from the alr4 package.  Imagine yourself working for an organization such as one that is interested in food production, that needs to understand land prices of farms.  We need to be able to communicate the drivers of these prices and the effects of time and region. To understand trends but also where we may find land that is undervalued.  In the next two questions you'll begin to explore how the price per acre has changed over time, and also investigate if there was a region effect.  A region effect would be important in detecting an area where prices may be more robust.
+
+--------------------------------------------------
+
+
+Problem 1:  Using the MinnLand data in the alr4 package (read the help file for more info on data), fit a model using log(acrePrice) as the response and year as the predictor (use year as a factor).  In general housing prices in the US were increasing from 2002-2006, and then began to fall in 2007.  Is this true for Minnesota?   Use a boxplot and your regression coefficents to explain.  Report the results any other statistical test we have learned to give insight into the implications of your model.  (Make sure you check your residual plots).
+
+----
+
+First step will be to explore the data and help file to ensure understanding of the data.
+
+```{r}
+help(MinnLand)
+head(MinnLand)
+```
+
+Due to the specific question and variables given in the prompt, we know that we need to convert the vector "year" to a factor.
+
+```{r}
+MinnLand$yearFactor<-as.factor(MinnLand$year)
+table(MinnLand$yearFactor)
+```
+
+Now that "year" has been converted to read as a factor (yearFactor), lets look at the comparison of the variables in a boxplot.
+
+```{r}
+boxplot(log(acrePrice)~yearFactor,data=MinnLand)
+```
+When comparing yearFactor to the log(acrePrice), it seems that the mean of the log(acrePrice) increases slightly every year, with the possible exception of 2003, which seems to stay the same or decrease by a small amount. Another interesting observation, is that 2011, box seems to taller in comparision to its preceding years, which a lower lower limit to occurances. In order to better understand the visualization, lets perform a linear regression.
+
+```{r}
+model<-lm(log(acrePrice)~yearFactor, data=MinnLand)
+summary(model)
+```
+
+Based on the summary of the regression, we can observe that as the year increases by 1, the price per acre of land also increases by .14-.75% for all years with the exception of 2003, where there was a .00155 decrease (this year was also the only coefficient without a significant pvalue). I also noticed that the rate at price per acre increased was steady over that period until 2011, where the mean of increase is lower than the preceding 2010 price per acre of land. 
+
+These are interesting findings, but because we want to do our due diligence, we should check our residual plots.
+
+```{r}
+par(mfrow=c(2,2))
+plot(model)
+```
+
+We see in the Residuals vs. Fitted plot that the variance of the residuals seems to be standardized and without a curve. This indicates constant variance and confirms that we can trust our model.    
+
+I also felt that it was interesting that we see banding in the data points, due to the factored year vector.
+
+
+-----------------------------------------------------
+
+Problem 2: Using the MinnLand data again, fit two models (with year as a factor in both)
+
+M1<-lm(log(acrePrice)~year+region, data=MinnLand)
+
+M2<-lm(log(acrePrice)~year+region+year*region, data=MinnLand)
+
+Explain the difference between the two models, then provide a comparison of the models.  Using the model you define as "best" provide an explanation of the coefficients.  (HINT: An EFFECTS PLOT makes this easier visually).
+
+----
+
+As we have already examined the data in some capacity in problem 1, we do not need to re-examine here. I will begin by adjusting the models to include the year variable as a factor, executing both models in seperate chunks.
+
+```{r}
+M1<-lm(log(acrePrice)~yearFactor+region, data=MinnLand)
+summary(M1)
+par(mfrow=c(2,2))
+plot(M1)
+plot(allEffects(M1))
+```
+
+
+```{r}
+M2<-lm(log(acrePrice)~yearFactor+region+yearFactor*region, data=MinnLand)
+summary(M2)
+par(mfrow=c(2,2))
+plot(M2)
+plot(allEffects(M2))
+```
+
+After running both provided models, checking residuals and using an all effects plot, we can make a few observations. 
+
+---------------------------------------------------------------------------
+
+Problem 3:  The salary data in the alr4 package concerns salary at a small midwestern college for a legal case concerning pay discrimination against women.  That data refers to tenure track faculty only.  We have been asked to look at this claim based on the data we have avaliable. The variables are degree (MS/PhD), rank (Assistant Prof/ Assoc Prof/ Prof), sex (M/F), Year (number of years in current rank), ysdeg (years since highest degree), and salary (academic year salary in dollars).  The code:
+
+t.test(salary$salary[salary$sex=="Male"], salary$salary[salary$sex=="Female"], alternative="greater")
+
+produces a two sample t-test, with hypothesis
+
+NH: The mean salary of males in this population is less than or equal to the mean salary of females
+
+AH:  The mean salary of males in this population is greater than the mean salary of females
+
+Run this code, and comment on the results of this test comparing your p-value to a 0.05 level, does anything change at a 0.01 level?
+
+We know there could be other factors that effect salary, implement a model using all the variables in the data with salary as the response and the rest as predictors, comment on the effect of sex.  Fit a second model removing rank as a factor, now comment on the effect of sex in the model?  What insight does this provide on the data?  (Hint:  Assistant Prof salary < Assoc Prof Salary < Prof Salary in the same field)
+
+----
+
+First lets explore the data and open the help file.
+
+```{r}
+help(salary)
+head(salary)
+dim(salary)
+summary(salary)
+```
+
+We see that their are 52 observations of college staff and 6 vectors. We will now run the provided code to execute a t-test with the Null Hypothesis that mean salary of males in this population is less than or equal to that of females. Our Alternative Hypothesis will be that mean salary collected by males is greater then that of females. 
+
+(I should also note that upon review of the summary for the salary data, we can see that there are 38 males and only 14 female staff. This could potentially create problems with the t-test, as we are comparing the means of two groups, where one group is over twice the size of the other. Also, this presents a question as to whether their are female staff represented across all positions. The lack of female representation may create a problem with disperate treatment or disperate impact and should be examined.)
+
+```{r}
+t.test(x=salary$salary[salary$sex=="Male"],y=salary$salary[salary$sex=="Female"],alternative = "greater")
+
+```
+
+
+
+
+-----------------------------------------------------------
+
+Problem 4: In many manufacturing setting understanding levels in which machines can be tuned to produce a given product is very important. Even more important is understanding the ability of those products strength and ability to fail. In this setting we are going to look at the strength of yarn, based on the length of the yarn (len), the time the yarn was asked to hold per cycle (amp), and the amount the yarn was asked to hold (load).  The response is the number of times/cycles the yarn made it through without breaking (cycles). The data can be found in the wool dataset in the alr4 package. Fit the full main effects model using cycles as the response and all other variables as predictors, and interpret the Tukey HSD intervals and test with regard to load, to describe the differences between the levels of load. 
+
+----
+
+
+
+
+
+
