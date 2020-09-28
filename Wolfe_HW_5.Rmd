@@ -1,0 +1,179 @@
+---
+title: "Wolfe_HW_5"
+author: "Tyler Wolfe"
+date: "9/27/2020"
+output: word_document
+---
+
+## Problem 1
+
+In the MinnLand dataset in the alr4 package, fit two possible models with log(acrePrice) or sqrt(acrePrice) as the response, use year as a factor as well. We want to revisit the setting where we need to better understand land prices and the drivers. Use methods we’ve learned to develop two possible candidate models and compare them using
+  5 Fold Cross Validation
+  10 Fold Cross Validation
+  Random Splitting with 1000 splits. 
+Note you should use parallel computing where you can/need, and function writing where you can/need because there are 18,700 observations. Before starting this analysis remove ALL NA's from the data using na.omit(MinnLand). In each of the above cases comment on the model you would select to present as your final model based on prediction accuracy.  Give any insights it may have on the land prices in Minnesota over this time frame.  
+
+-----
+
+As always I'd like to explore the data set to understand the data.
+
+```{r}
+library(alr4)
+library(parallel)
+```
+
+```{r}
+data(Minnland)
+help(MinnLand)
+head(MinnLand)
+summary(MinnLand)
+```
+
+
+```{r}
+MLNA=na.omit(MinnLand)
+summary(MLNA)
+dim(MLNA)
+```
+
+After omitting all of the observations that include an NA in any of their vectors, next we will change year to a factor within the new NA ommitted MLNA.
+
+```{r}
+MLNA$yearF <- as.factor(MLNA$year)
+```
+
+No we can begin to fit a model with log(acrePrice) as the response. Our goals is to better understand the relationship between the predictor variables as drivers for price per acre variance across observations.
+
+```{r}
+M1log<-lm(log(acrePrice)~improvements+yearF+acres+tillable+crpPct+productivity+financing, data=MLNA)
+summary(M1log)
+par(mfrow=c(2,2))
+plot(M1log)
+plot(allEffects(M1log))
+```
+
+
+```{r}
+Mod42<-step(M1log)
+```
+
+```{r}
+#8770/5 = 1754
+#8770/10 = 877
+
+MLNA=na.omit(MinnLand)
+summary(MLNA)
+MLNA$sampid=rep(10,dim(MLNA)[1])
+MLNA$yearF<-as.factor(MLNA$year)
+```
+Setting the distribution across 5 fold Cross Validation
+```{r}
+set.seed(623)
+set=sample(1:dim(MLNA)[1])  
+for(j in 1:9){
+MLNA$sampid[set[((j-1)*1754+1):(j*1754)]]=j
+}
+table(MLNA$sampid)
+```
+
+```{r}
+Mod1<-lm(log(acrePrice)~improvements + yearF + acres + tillable + crpPct + productivity + financing, data=MLNA)
+summary(Mod1)
+par(mfrow=c(2,2))
+plot(Mod1)
+```
+
+```{r}
+Mod2<-lm(log(acrePrice)~region+yearF+crpPct+log(acres),data=MLNA)
+summary(Mod2)
+par(mfrow=c(2,2))
+plot(Mod2)
+```
+
+```{r}
+AIC(Mod1)
+AIC(Mod2)
+
+```
+
+
+```{r}
+Rssm1=0
+Rssm2=0
+for(i in 1:5){
+  sets=which(MLNA$sampid==i)
+  Mod1<-lm(log(acrePrice)~improvements + yearF + acres + tillable + crpPct + productivity + financing,data=MLNA[-sets,])
+  Mod2<-lm(log(acrePrice)~region+yearF+crpPct+log(acres),data=MLNA[-sets,])
+  pm1<-predict(Mod1,newdata=MLNA[sets,])
+  pm2<-predict(Mod2,newdata=MLNA[sets,])
+  Rssm1=Rssm1+sum((log(MLNA$acrePrice[sets])-pm1)^2)
+  Rssm2=Rssm2+sum((log(MLNA$acrePrice[sets])-pm2)^2)
+}
+Rssm1
+Rssm2
+```
+
+10 Fold Cross Validation
+```{r}
+MLNA=na.omit(MinnLand)
+summary(MLNA)
+MLNA$sampid=rep(10,dim(MLNA)[1])
+MLNA$yearF<-as.factor(MLNA$year)
+```
+
+```{r}
+set.seed(623)
+set=sample(1:dim(MLNA)[1])  
+for(j in 1:9){
+MLNA$sampid[set[((j-1)*877+1):(j*877)]]=j  
+}
+table(MLNA$sampid)
+```
+
+```{r}
+Mod1<-lm(log(acrePrice)~improvements + yearF + acres + tillable + crpPct + productivity + financing, data=MLNA)
+summary(Mod1)
+par(mfrow=c(2,2))
+plot(Mod1)
+```
+
+```{r}
+Mod2<-lm(log(acrePrice)~region+yearF+crpPct+log(acres),data=MLNA)
+summary(Mod2)
+par(mfrow=c(2,2))
+plot(Mod2)
+```
+
+```{r}
+AIC(Mod1)
+AIC(Mod2)
+```
+
+```{r}
+Rssm1=0
+Rssm2=0
+for(i in 1:10){
+  sets=which(MLNA$sampid==i)
+  Mod1<-lm(log(acrePrice)~improvements + yearF + acres + tillable + crpPct + productivity + financing,data=MLNA[-sets,])
+  Mod2<-lm(log(acrePrice)~region+yearF+crpPct+log(acres),data=MLNA[-sets,])
+  pm1<-predict(Mod1,newdata=MLNA[sets,])
+  pm2<-predict(Mod2,newdata=MLNA[sets,])
+  Rssm1=Rssm1+sum((log(MLNA$acrePrice[sets])-pm1)^2)
+  Rssm2=Rssm2+sum((log(MLNA$acrePrice[sets])-pm2)^2)
+}
+Rssm1
+Rssm2
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
